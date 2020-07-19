@@ -1,6 +1,13 @@
 import telebot
 import re
+import os
 
+if "TOKEN_HEROKU" in os.environ:
+    bot = telebot.TeleBot(os.environ["TOKEN_HEROKU"])
+else:
+    with open("./token.txt") as token:
+        bot = telebot.TeleBot(token.read())
+  
 cities = [
     ["Владимир", "Воронеж"],
     ["Иваново", "Калуга"],
@@ -13,11 +20,8 @@ cities = [
     ["Ростов-на-Дону"]
 ]
 
-status = {}
-
-with open("./token.txt") as token:
-    bot = telebot.TeleBot(token.read())
-    
+status = {}  
+  
 @bot.message_handler(commands=["start"])
 def start(message):
     status[message.chat.id] = {}
