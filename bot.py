@@ -1,12 +1,15 @@
 #!/usr/bin/env python
+
 import telebot
 import re
 import os
 
 if "TOKEN_HEROKU" in os.environ:
     bot = telebot.TeleBot(os.environ["TOKEN_HEROKU"])
+    
 elif "TOKEN" in os.environ:
     bot = telebot.TeleBot(os.environ["TOKEN"])
+    
 else:
     with open("./token.txt") as token:
         bot = telebot.TeleBot(token.read())
@@ -29,6 +32,10 @@ status = {}
 def start(message):
     status[message.chat.id] = {}
     bot.send_message(message.chat.id, "Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/form - форма для оформления подписи")
+    
+@bot.message_handler(commands=["posts"])
+def posts(message):
+    bot.reply_to(message, "Посты недоступны")
 
 @bot.message_handler(commands=["form"])
 def form(message):
@@ -115,8 +122,8 @@ def text(message):
             status[message.chat.id]["write_birthday"] = True
             status[message.chat.id]["write_fio"] = False
 
-            status[message.chat.id]["name"] = message.text.split(" ", 1)[0],
-            status[message.chat.id]["subname"] = message.text.split(" ", 1)[1].split(" ", 1)[0],
+            status[message.chat.id]["subname"] = message.text.split(" ", 1)[0],
+            status[message.chat.id]["name"] = message.text.split(" ", 1)[1].split(" ", 1)[0],
             status[message.chat.id]["middle_name"] = message.text.split(" ", 1)[1].split(" ", 1)[1].split(" ", 1)
 
             # bot.send_message(message.chat.id, status["subname"][0])
@@ -131,6 +138,9 @@ def text(message):
 
     elif status[message.chat.id]["write_birthday"]:
         if re.match(r"[0-3]\d\.[0-1]\d\.[1-2]\d{3}", message.text):
+            
+            status[message.chat.id]["birthday"] = message.text
+            
             bot.reply_to(message, "Отправьте ваш адрес регистрации *по паспорту*, улицу и номер дома.\n\n_(Поставить подпись за кандидата возможно, если ваш адрес в избирательном округе кандидата)_", parse_mode="Markdown")
 
             status[message.chat.id]["write_birthday"] = False
@@ -141,6 +151,9 @@ def text(message):
 
     elif status[message.chat.id]["write_place"]:
         if message.text:
+            
+            status[message.chat.id]["place"] = message.text
+            
             bot.send_message(message.chat.id, "Данные не проверял, верю наслово, на сервере их тоже не храню — места нет. Отправьте ваш адрес электронной почты")
 
             status[message.chat.id]["write_place"] = False
@@ -148,6 +161,9 @@ def text(message):
 
     elif status[message.chat.id]["write_email"]:
         if re.match(r".{1,}@.{1,}", message.text):
+            
+            status[message.chat.id]["email"] = message.text 
+            
             bot.send_message(message.chat.id, "Теперь напишите ваш номер телефона (*+7*_xxxxxxxxx_)", parse_mode="Markdown")
 
             status[message.chat.id]["write_place"] = False
@@ -158,7 +174,20 @@ def text(message):
 
     elif status[message.chat.id]["write_phone"]:
         if re.match(r"\+7\d{9}", message.text):
+            
+            status[message.chat.id]["phone"] = message.text
+            
             bot.send_message(message.chat.id, "Теперь вы можете отправить заявку :)", parse_mode="Markdown")
+            
+            #bot.send_message(message.chat.id, "Фамилия - *" + status[message.chat.id]["subname"][0] + "*\n" + 
+            #                                  "Имя - *" + status[message.chat.id]["name"][0] + "*\n" + 
+            #                                  "Отчество - *" + status[message.chat.id]["middle_name"][0] + "*\n" + 
+            #                                  "День Рождения - *" + status[message.chat.id]["birthday"] + "*\n" + 
+            #                                  "Город - *" + status[message.chat.id]["city"] + "*\n" + 
+            #                                  "Место - *" + status[message.chat.id]["place"] + "*\n" + 
+            #                                  "Почта - *" + status[message.chat.id]["email"] + "*\n" + 
+            #                                  "Номер телефона - *" + status[message.chat.id]["phone"] + "*", 
+            #                                  parse_mode="Markdown")
 
             status[message.chat.id]["write_place"] = False
             status[message.chat.id]["write_email"] = False
