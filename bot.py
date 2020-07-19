@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import telebot
 import re
 import os
