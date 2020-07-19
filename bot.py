@@ -5,6 +5,8 @@ import os
 
 if "TOKEN_HEROKU" in os.environ:
     bot = telebot.TeleBot(os.environ["TOKEN_HEROKU"])
+elif "TOKEN" in os.environ:
+    bot = telebot.TeleBot(os.environ["TOKEN"])
 else:
     with open("./token.txt") as token:
         bot = telebot.TeleBot(token.read())
