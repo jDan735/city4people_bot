@@ -36,6 +36,7 @@ def start(message):
 @bot.message_handler(commands=["posts"])
 def posts(message):
     bot.reply_to(message, "Посты недоступны")
+    bot.send_message(message.chat.id, "[google](google.com)", parse_mode="Markdown")
 
 @bot.message_handler(commands=["form"])
 def form(message):
