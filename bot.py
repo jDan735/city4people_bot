@@ -102,7 +102,7 @@ for var in vars:
 @bot.message_handler(commands=["start"])
 def start(message):
     status[message.chat.id] = {}
-    bot.send_message(message.chat.id, "Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/form - форма для оформления подписи")
+    bot.send_message(message.chat.id, "Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/start - приветствие\n/form - форма для записи подписи\n/posts - посты с сайта Городских Проектов")
 
 @bot.message_handler(commands=["posts"])
 def posts(message):
