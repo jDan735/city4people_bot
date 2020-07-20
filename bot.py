@@ -242,7 +242,19 @@ def callback_worker(call):
 
 @bot.message_handler(content_types = ["text"])
 def text(message):
+
     if message.chat.id > 0:
+
+        if message.chat.id in status:
+            pass
+        else:
+            status[message.chat.id] = {}
+
+            status[message.chat.id]["write_fio"] = False
+            status[message.chat.id]["write_birthday"] = False
+            status[message.chat.id]["write_place"] = False
+            status[message.chat.id]["write_email"] = False
+            status[message.chat.id]["write_phone"] = False
 
         #=============================================== Writing statuses ==========================================
 
