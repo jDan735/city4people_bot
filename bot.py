@@ -4,6 +4,7 @@ import telebot
 import re
 import os
 import requests
+import json
 from bs4 import BeautifulSoup
 
 if "TOKEN_HEROKU" in os.environ:
@@ -27,6 +28,25 @@ cities = [
     ["Нижний Новгород"],
     ["Ростов-на-Дону"]
 ]
+
+citiesid = {
+    "Владимир": 10,
+    "Воронеж": 8,
+    "Иваново": 1,
+    "Калуга": 6,
+    "Кастрома": 19,
+    "Краснодар": 11,
+    "Липецк": 3,
+    "Орел": 2,
+    "Самара": 13,
+    "Смоленск": 18,
+    "Сочи": 12,
+    "Томск": 4,
+    "Псковская область": -2,
+    "Нижний Новгород": 5,
+    "Ростов-на-Дону": 9
+}
+
 
 urllist = {
     "tram": {
@@ -90,7 +110,7 @@ def getPosts(url):
 vars = ["tram", "trolley", "zero_deaths", "bicycles", "walkers", "all_posts"]
 for var in vars:
     urllist[var]["postslist"] = getPosts(urllist[var]["posts"])
-    print("Load " + var)
+    print("[Load] " + var)
 # =======================================================================
 
 
@@ -102,7 +122,7 @@ for var in vars:
 @bot.message_handler(commands=["start"])
 def start(message):
     status[message.chat.id] = {}
-    bot.send_message(message.chat.id, "Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/start - приветствие\n/form - форма для записи подписи\n/posts - посты с сайта Городских Проектов")
+    bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/start - приветствие\n/form - форма для записи подписи\n/posts - посты с сайта Городских Проектов")
 
 @bot.message_handler(commands=["posts"])
 def posts(message):
@@ -111,25 +131,25 @@ def posts(message):
 
         keyboard = telebot.types.InlineKeyboardMarkup()
 
-        keyboard.add(telebot.types.InlineKeyboardButton(text="Трамвай", callback_data="tram"),
-                     telebot.types.InlineKeyboardButton(text="Троллейбусы", callback_data="trolley"))
+        keyboard.add(telebot.types.InlineKeyboardButton(text="🚋 Трамвай", callback_data="tram"),
+                     telebot.types.InlineKeyboardButton(text="🚎 Троллейбусы", callback_data="trolley"))
 
-        keyboard.add(telebot.types.InlineKeyboardButton(text="Ноль смертей", callback_data="zero_deaths"),
-                     telebot.types.InlineKeyboardButton(text="Велосипеды", callback_data="bicycles"))
+        keyboard.add(telebot.types.InlineKeyboardButton(text="👩‍🚀 Ноль смертей", callback_data="zero_deaths"),
+                     telebot.types.InlineKeyboardButton(text="🚲 Велосипеды", callback_data="bicycles"))
 
-        keyboard.add(telebot.types.InlineKeyboardButton(text="Пешеходы", callback_data="walkers"),
-                     telebot.types.InlineKeyboardButton(text="Все", callback_data="all_posts"))
+        keyboard.add(telebot.types.InlineKeyboardButton(text="🚶 Пешеходы", callback_data="walkers"),
+                     telebot.types.InlineKeyboardButton(text="🗂 Все", callback_data="all_posts"))
 
         #keyboard.row(telebot.types.InlineKeyboardButton(text="Нет", callback_data="no"))
 
         status[message.chat.id] = {}
         status[message.chat.id]["posts"] = [0, 10]
 
-        bot.send_message(message.chat.id, text="Выберите тег статей, пожалуйста", reply_markup=keyboard)
+        bot.send_message(message.chat.id, text="🏷 Выберите тег статей, пожалуйста", reply_markup=keyboard)
 
     else:
         #bot.send_message(message.chat.id, "Оформление подписи доступно только в личной переписке с ботом")
-        bot.reply_to(message, "Чтение постов доступно только в личной переписке с ботом")
+        bot.reply_to(message, "⚠️ Чтение постов доступно только в личной переписке с ботом")
 
     # keyboard = telebot.types.InlineKeyboardMarkup()
     #
@@ -179,7 +199,7 @@ def form(message):
 
         keyboard = telebot.types.InlineKeyboardMarkup()
 
-        keyboard.add(telebot.types.InlineKeyboardButton(text="Продолжить", callback_data="more"))
+        keyboard.add(telebot.types.InlineKeyboardButton(text="👍 Продолжить", callback_data="more"))
         # keyboard.add(telebot.types.InlineKeyboardButton(text="Да", callback_data="yes_form"), telebot.types.InlineKeyboardButton(text="Нет", callback_data="no_form"))
         #keyboard.row(telebot.types.InlineKeyboardButton(text="Нет", callback_data="no"))
 
@@ -187,7 +207,7 @@ def form(message):
 
     else:
         #bot.send_message(message.chat.id, "Оформление подписи доступно только в личной переписке с ботом")
-        bot.reply_to(message, "Оформление подписи доступно только в личной переписке с ботом")
+        bot.reply_to(message, "⚠️ Оформление подписи доступно только в личной переписке с ботом")
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
@@ -223,7 +243,7 @@ def callback_worker(call):
                      telebot.types.InlineKeyboardButton(text=str(status[call.message.chat.id]["posts"][0]) + " / " + str(status[call.message.chat.id]["posts"][1]), callback_data="status"),
                      telebot.types.InlineKeyboardButton(text="Вперед 👉", callback_data="posts_next"))
 
-        bot.send_message(call.message.chat.id, "Выберите статью", reply_markup=keyboard)
+        bot.send_message(call.message.chat.id, "🔎 Выберите статью", reply_markup=keyboard)
 
     if re.match("TG_POST_ID=", call.data):
         try:
@@ -246,7 +266,7 @@ def callback_worker(call):
                     status[call.message.chat.id]["city"] = city1
                     status[call.message.chat.id]["write_fio"] = True
 
-                    bot.send_message(call.message.chat.id, "Хорошо. Ваш город *" + city1 + "*. Напишите ваше ФИО", parse_mode="Markdown")
+                    bot.send_message(call.message.chat.id, "👍 Хорошо. Ваш город *" + city1 + "*. Напишите ваше ФИО", parse_mode="Markdown")
 
         elif len(city) == 1:
             if call.data == city[0]:
@@ -258,7 +278,7 @@ def callback_worker(call):
                 status[call.message.chat.id]["city"] = city[0]
                 status[call.message.chat.id]["write_fio"] = True
 
-                bot.send_message(call.message.chat.id, "Хорошо. Ваш город *" + city[0] + "*. Напишите ваше ФИО", parse_mode="Markdown")
+                bot.send_message(call.message.chat.id, "👍 Хорошо. Ваш город *" + city[0] + "*. Напишите ваше ФИО", parse_mode="Markdown")
 
     if call.data == "city_not_find":
         try:
@@ -266,7 +286,7 @@ def callback_worker(call):
         except:
             pass
 
-        bot.send_message(call.message.chat.id, "Очень обидно :(")
+        bot.send_message(call.message.chat.id, "😭")
 
     if call.data == "more":
         try:
@@ -289,14 +309,14 @@ def callback_worker(call):
                                                         callback_data="city_not_find"))
 
 
-        bot.send_message(call.message.chat.id, "Выберите город", reply_markup=keyboard)
+        bot.send_message(call.message.chat.id, "🔍 Выберите город", reply_markup=keyboard)
 
     elif call.data == "select_fio":
         try:
             bot.delete_message(call.from_user.id, call.message.message_id)
         except:
             pass
-        bot.send_message(call.message.chat.id, "Напишите ваше ФИО.")
+        bot.send_message(call.message.chat.id, "👨‍🦰 Напишите ваше ФИО.")
         status[message.chat.id]["write_fio"] = True
     elif call.data == "no_form":
         try:
@@ -337,24 +357,24 @@ def text(message):
                 # bot.send_message(message.chat.id, status["name"][0])
                 # bot.send_message(message.chat.id, status["middle_name"][0])
                 # bot.send_message(message.chat.id, "Ваша фамилия - *" + str(status["subname"][0]) + "*\nВаше имя - *" + str(status["name"][0]) + "*\nВаше отчество - *" + str(status["middle_name"][0]) + "*", parse_mode="Markdown")
-                bot.reply_to(message, "Напишите вашу дату рождения (ДД.ММ.ГГГГ)")
+                bot.reply_to(message, "👶 Напишите вашу дату рождения (ДД.ММ.ГГГГ)")
                 # except:
                 #     bot.reply_to(message, "Некорректные данные")
             else:
-                bot.send_message(message.chat.id, "ФИО написано не правильно")
+                bot.send_message(message.chat.id, "⚠️ ФИО написано неправильно")
 
         elif status[message.chat.id]["write_birthday"]:
             if re.match(r"[0-3]\d\.[0-1]\d\.[1-2]\d{3}", message.text):
 
                 status[message.chat.id]["birthday"] = message.text
 
-                bot.reply_to(message, "Отправьте ваш адрес регистрации *по паспорту*, улицу и номер дома.\n\n_(Поставить подпись за кандидата возможно, если ваш адрес в избирательном округе кандидата)_", parse_mode="Markdown")
+                bot.reply_to(message, "🏠 Отправьте ваш адрес регистрации *по паспорту*, улицу и номер дома.\n\n_(Поставить подпись за кандидата возможно, если ваш адрес в избирательном округе кандидата)_", parse_mode="Markdown")
 
                 status[message.chat.id]["write_birthday"] = False
                 status[message.chat.id]["write_fio"] = False
                 status[message.chat.id]["write_place"] = True
             else:
-                bot.reply_to(message, "Данные некорректные, введите снова")
+                bot.reply_to(message, "⚠️ Данные некорректные, введите снова")
 
         elif status[message.chat.id]["write_place"]:
             if message.text:
@@ -377,7 +397,7 @@ def text(message):
                 status[message.chat.id]["write_email"] = False
                 status[message.chat.id]["write_phone"] = True
             else:
-                bot.send_message(message.chat.id, "Отправьте адрес электронной почты снова")
+                bot.send_message(message.chat.id, "⚠️ Отправьте адрес электронной почты снова")
 
         elif status[message.chat.id]["write_phone"]:
             if re.match(r"\+7\d{9}", message.text):
@@ -387,19 +407,35 @@ def text(message):
                 status[message.chat.id]["birthday_new"] = status[message.chat.id]["birthday"].replace(".", "-")
                 status[message.chat.id]["birthday_server"] = status[message.chat.id]["birthday_new"][6:10] + "-" + status[message.chat.id]["birthday_new"][0:5]
 
-                formurl = "https://go.city4people.ru/ajax/ajax_mainform.php?context=save_form,save_form&form[name]=" + status[message.chat.id]["name"] + "&form[middlename]=" + status[message.chat.id]["middle_name"] + "&form[surname]=" + status[message.chat.id]["subname"] + "&form[birthday]=" + status[message.chat.id]["birthday_server"] + "&form[email]=" + status[message.chat.id]["email"] + "&form[phone]=" + "+7 123 456-78-900" + "&form[is_prg]=0" + "&form[city]=" + "11" + "&form[passports_raw_addr]" + status[message.chat.id]["place"] + "&is_mobile=false" + "&mode=sign"
+                print(status[message.chat.id]["birthday_server"])
 
-                bot.send_message(message.chat.id, "`" + formurl + "``", parse_mode="Markdown")
+                fileurl = "https://go.city4people.ru/ajax/ajax_mainform.php?"
 
-                form = requests.get(formurl)
+                formurl = fileurl + "context=save_form,save_form&form[name]=" + status[message.chat.id]["name"][0]
+                formurl = formurl + "&form[middlename]=" + status[message.chat.id]["middle_name"][0]
+                formurl = formurl + "&form[surname]=" + status[message.chat.id]["subname"][0]
+                formurl = formurl + "&form[birthday]=" + status[message.chat.id]["birthday_server"]
+                formurl = formurl + "&form[email]=" + status[message.chat.id]["email"]
+                formurl = formurl + "&form[phone]=" + "+7 123 456-78-900" + "&form[is_car_owner]=0"
+                formurl = formurl + "&form[is_prg]=0" + "&form[city]=" + str(citiesid[status[message.chat.id]["city"]])
+                formurl = formurl + "&form[passports_raw_addr]" + status[message.chat.id]["place"]
+                formurl = formurl + "&is_mobile=false" + "&mode=sign"
+
+                bot.send_message(message.chat.id, "`" + formurl + "`", parse_mode="Markdown")
+
+                form = requests.get(formurl, headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
                 form.encoding = "utf-8"
 
                 #bot.send_message(message.chat.id, "Заявка отправлена :)", parse_mode="Markdown")
-                bot.send_message(message.chat.id, "`" + form + "``", parse_mode="Markdown")
+
+                print(formurl)
+                #print(form.headers)
+                print(form)
+                print(form.content)
 
 
 
-                #bot.send_message(message.chat.id, "Фамилия - *" + status[message.chat.id]["subname"][0] + "*\n" +
+                # bot.send_message(message.chat.id, "Фамилия - *" + status[message.chat.id]["subname"][0] + "*\n" +
                 #                                  "Имя - *" + status[message.chat.id]["name"][0] + "*\n" +
                 #                                  "Отчество - *" + status[message.chat.id]["middle_name"][0] + "*\n" +
                 #                                  "День Рождения - *" + status[message.chat.id]["birthday"] + "*\n" +
@@ -416,7 +452,7 @@ def text(message):
                 status[message.chat.id]["write_phone"] = False
 
             else:
-                bot.send_message(message.chat.id, "Введите правильный номер")
+                bot.send_message(message.chat.id, "⚠️ Введите правильный номер")
 
         # else:
         #     bot.reply_to(message, "Я еще не умею работать с текстом")
