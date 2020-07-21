@@ -119,7 +119,11 @@ def posts(message):
 
         keyboard.add(telebot.types.InlineKeyboardButton(text="Пешеходы", callback_data="walkers"),
                      telebot.types.InlineKeyboardButton(text="Все", callback_data="all_posts"))
+
         #keyboard.row(telebot.types.InlineKeyboardButton(text="Нет", callback_data="no"))
+
+        status[message.chat.id] = {}
+        status[message.chat.id]["posts"] = [0, 10]
 
         bot.send_message(message.chat.id, text="Выберите тег статей, пожалуйста", reply_markup=keyboard)
 
@@ -127,22 +131,59 @@ def posts(message):
         #bot.send_message(message.chat.id, "Оформление подписи доступно только в личной переписке с ботом")
         bot.reply_to(message, "Чтение постов доступно только в личной переписке с ботом")
 
+    # keyboard = telebot.types.InlineKeyboardMarkup()
+    #
+    # keyboard.add(telebot.types.InlineKeyboardButton(text="Трамвай", callback_data="tram"),
+    #              telebot.types.InlineKeyboardButton(text="Троллейбусы", callback_data="trolley"))
+    #
+    # keyboard.add(telebot.types.InlineKeyboardButton(text="Ноль смертей", callback_data="zero_deaths"),
+    #              telebot.types.InlineKeyboardButton(text="Велосипеды", callback_data="bicycles"))
+    #
+    # keyboard.add(telebot.types.InlineKeyboardButton(text="Пешеходы", callback_data="walkers"),
+    #              telebot.types.InlineKeyboardButton(text="Все", callback_data="all_posts"))
+    #         #keyboard.row(telebot.types.InlineKeyboardButton(text="Нет", callback_data="no"))
+    #
+    # status[message.chat.id] = {}
+    # status[message.chat.id]["posts"] = [0, 10]
+    #
+    # bot.send_message(message.chat.id, text="Выберите тег статей, пожалуйста", reply_markup=keyboard)
+
     # bot.reply_to(message, url["postslist"][0]["title"])
 
 @bot.message_handler(commands=["form"])
 def form(message):
     #bot.send_message(message.chat.id, "Для того, чтобы оставить подпись вам нужно указать:\n\n*Персональную информацию:*\n1. ФИО.\n2. Дату рождения (ДД.ММ.ГГГГ).\n3. Ваш адрес регистрации по паспорту, улица и номер дома.\n\n*Активные контакты:*\n1. Телефон.\n2. Электронную почту.", parse_mode="Markdown")
 
+        # if message.chat.type == "private":
+        #     status[message.chat.id] = {}
+        #
+        #     keyboard = telebot.types.InlineKeyboardMarkup()
+        #
+        #     for city in cities:
+        #
+        #         if len(city) == 1:
+        #             keyboard.add(telebot.types.InlineKeyboardButton(text=city[0], callback_data=city[0]))
+        #
+        #         if len(city) == 2:
+        #             keyboard.add(telebot.types.InlineKeyboardButton(text=city[0], callback_data=city[0]),
+        #                          telebot.types.InlineKeyboardButton(text=city[1], callback_data=city[1]))
+        #
+        #     bot.send_message(message.chat.id, "Для того, чтобы оставить подпись Вам нужно указать персональные данные, телефон, емайл, а также адрес регистрации по паспорту, улицу и номер дома")
+        #
+        #     bot.send_message(message.chat.id, "Выберите город", reply_markup=keyboard)
+
     if message.chat.type == "private":
         status[message.chat.id] = {}
         #bot.send_message(message.chat.id, "Для того, чтобы оставить подпись Вам нужно указать персональные данные, телефон, емайл, а также адрес регистрации по паспорту, улицу и номер дома")
-        bot.reply_to(message, "Для того, чтобы оставить подпись Вам нужно указать персональные данные, телефон, электронную почту, а также адрес регистрации по паспорту, улицу и номер дома")
+
 
         keyboard = telebot.types.InlineKeyboardMarkup()
-        keyboard.add(telebot.types.InlineKeyboardButton(text="Да", callback_data="yes_form"), telebot.types.InlineKeyboardButton(text="Нет", callback_data="no_form"))
+
+        keyboard.add(telebot.types.InlineKeyboardButton(text="Продолжить", callback_data="more"))
+        # keyboard.add(telebot.types.InlineKeyboardButton(text="Да", callback_data="yes_form"), telebot.types.InlineKeyboardButton(text="Нет", callback_data="no_form"))
         #keyboard.row(telebot.types.InlineKeyboardButton(text="Нет", callback_data="no"))
 
-        bot.send_message(message.chat.id, text="Продолжаем?", reply_markup=keyboard)
+        bot.reply_to(message, "Для того, чтобы оставить подпись Вам нужно указать персональные данные, телефон, электронную почту, а также адрес регистрации по паспорту, улицу и номер дома", reply_markup=keyboard)
 
     else:
         #bot.send_message(message.chat.id, "Оформление подписи доступно только в личной переписке с ботом")
@@ -166,9 +207,21 @@ def callback_worker(call):
         else:
             urllist[call.data]["postslist"] = getPosts(urllist[call.data]["posts"])
 
-        for post in urllist[call.data]["postslist"][:10]:
+        print(len(urllist[call.data]["postslist"]))
+
+        if call.message.chat.id in status:
+            pass
+        else:
+            status[call.message.chat.id] = {}
+            status[call.message.chat.id]["posts"] = [0, 10]
+
+        for post in urllist[call.data]["postslist"][0:10]:
             keyboard.add(telebot.types.InlineKeyboardButton(text=post["title"],
                     callback_data="TG_POST_ID=" + str(urllist[call.data]["postslist"].index(post)) + "," + call.data))
+
+        keyboard.add(telebot.types.InlineKeyboardButton(text="👈 Назад", callback_data="posts_back"),
+                     telebot.types.InlineKeyboardButton(text=str(status[call.message.chat.id]["posts"][0]) + " / " + str(status[call.message.chat.id]["posts"][1]), callback_data="status"),
+                     telebot.types.InlineKeyboardButton(text="Вперед 👉", callback_data="posts_next"))
 
         bot.send_message(call.message.chat.id, "Выберите статью", reply_markup=keyboard)
 
@@ -193,7 +246,7 @@ def callback_worker(call):
                     status[call.message.chat.id]["city"] = city1
                     status[call.message.chat.id]["write_fio"] = True
 
-                    bot.send_message(call.message.chat.id, "Хорошо. Ваш город *" + city[0] + "*. Напишите ваше ФИО", parse_mode="Markdown")
+                    bot.send_message(call.message.chat.id, "Хорошо. Ваш город *" + city1 + "*. Напишите ваше ФИО", parse_mode="Markdown")
 
         elif len(city) == 1:
             if call.data == city[0]:
@@ -207,7 +260,15 @@ def callback_worker(call):
 
                 bot.send_message(call.message.chat.id, "Хорошо. Ваш город *" + city[0] + "*. Напишите ваше ФИО", parse_mode="Markdown")
 
-    if call.data == "yes_form":
+    if call.data == "city_not_find":
+        try:
+            bot.delete_message(call.from_user.id, call.message.message_id)
+        except:
+            pass
+
+        bot.send_message(call.message.chat.id, "Очень обидно :(")
+
+    if call.data == "more":
         try:
             bot.delete_message(call.from_user.id, call.message.message_id)
         except:
@@ -221,7 +282,12 @@ def callback_worker(call):
                 keyboard.add(telebot.types.InlineKeyboardButton(text=city[0], callback_data=city[0]))
 
             if len(city) == 2:
-                keyboard.add(telebot.types.InlineKeyboardButton(text=city[0], callback_data=city[0]), telebot.types.InlineKeyboardButton(text=city[1], callback_data=city[1]))
+                keyboard.add(telebot.types.InlineKeyboardButton(text=city[0], callback_data=city[0]),
+                             telebot.types.InlineKeyboardButton(text=city[1], callback_data=city[1]))
+
+        keyboard.add(telebot.types.InlineKeyboardButton(text="<Моего города нет в списке>",
+                                                        callback_data="city_not_find"))
+
 
         bot.send_message(call.message.chat.id, "Выберите город", reply_markup=keyboard)
 
@@ -301,7 +367,7 @@ def text(message):
                 status[message.chat.id]["write_email"] = True
 
         elif status[message.chat.id]["write_email"]:
-            if re.match(r".{1,}@.{1,}", message.text):
+            if re.match(r".{1,}@.{1,}\..{1,}", message.text):
 
                 status[message.chat.id]["email"] = message.text
 
@@ -317,6 +383,8 @@ def text(message):
             if re.match(r"\+7\d{9}", message.text):
 
                 status[message.chat.id]["phone"] = message.text
+
+                
 
                 bot.send_message(message.chat.id, "Теперь вы можете отправить заявку :)", parse_mode="Markdown")
 
