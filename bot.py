@@ -384,9 +384,20 @@ def text(message):
 
                 status[message.chat.id]["phone"] = message.text
 
-                
+                status[message.chat.id]["birthday_new"] = status[message.chat.id]["birthday"].replace(".", "-")
+                status[message.chat.id]["birthday_server"] = status[message.chat.id]["birthday_new"][6:10] + "-" + status[message.chat.id]["birthday_new"][0:5]
 
-                bot.send_message(message.chat.id, "Теперь вы можете отправить заявку :)", parse_mode="Markdown")
+                formurl = "https://go.city4people.ru/ajax/ajax_mainform.php?context=save_form,save_form&form[name]=" + status[message.chat.id]["name"] + "&form[middlename]=" + status[message.chat.id]["middle_name"] + "&form[surname]=" + status[message.chat.id]["subname"] + "&form[birthday]=" + status[message.chat.id]["birthday_server"] + "&form[email]=" + status[message.chat.id]["email"] + "&form[phone]=" + "+7 123 456-78-900" + "&form[is_prg]=0" + "&form[city]=" + "11" + "&form[passports_raw_addr]" + status[message.chat.id]["place"] + "&is_mobile=false" + "&mode=sign"
+
+                bot.send_message(message.chat.id, "`" + formurl + "``", parse_mode="Markdown")
+
+                form = requests.get(formurl)
+                form.encoding = "utf-8"
+
+                #bot.send_message(message.chat.id, "Заявка отправлена :)", parse_mode="Markdown")
+                bot.send_message(message.chat.id, "`" + form + "``", parse_mode="Markdown")
+
+
 
                 #bot.send_message(message.chat.id, "Фамилия - *" + status[message.chat.id]["subname"][0] + "*\n" +
                 #                                  "Имя - *" + status[message.chat.id]["name"][0] + "*\n" +
@@ -397,6 +408,8 @@ def text(message):
                 #                                  "Почта - *" + status[message.chat.id]["email"] + "*\n" +
                 #                                  "Номер телефона - *" + status[message.chat.id]["phone"] + "*",
                 #                                  parse_mode="Markdown")
+
+
 
                 status[message.chat.id]["write_place"] = False
                 status[message.chat.id]["write_email"] = False
