@@ -105,6 +105,12 @@ def getPosts(url):
 
     return list
 
+def transform_number(phone):
+    return "+7 " + phone[2:5] + " " + phone[5:8] + "-" + phone[8:10] + "-" + phone[10:12]
+
+def transform_date(date):
+    return date[6:10] + "-" + date[0:2] + "-" + date[3:5]
+
 
 # ======================= Проверка postslist ============================
 vars = ["tram", "trolley", "zero_deaths", "bicycles", "walkers", "all_posts"]
@@ -391,7 +397,7 @@ def text(message):
 
                 status[message.chat.id]["email"] = message.text
 
-                bot.send_message(message.chat.id, "Теперь напишите ваш номер телефона (*+7*_xxxxxxxxx_)", parse_mode="Markdown")
+                bot.send_message(message.chat.id, "Теперь напишите ваш номер телефона (*+7*_xxxxxxxxxxxx_)", parse_mode="Markdown")
 
                 status[message.chat.id]["write_place"] = False
                 status[message.chat.id]["write_email"] = False
@@ -400,38 +406,75 @@ def text(message):
                 bot.send_message(message.chat.id, "⚠️ Отправьте адрес электронной почты снова")
 
         elif status[message.chat.id]["write_phone"]:
-            if re.match(r"\+7\d{9}", message.text):
+            if re.match(r"\+7\d{9}", message.text.replace("-", "").replace(" ", "")):
 
-                status[message.chat.id]["phone"] = message.text
+                # +71234567890
+                # +7 123 456-78-90
+
+                status[message.chat.id]["phone"] = message.text.replace("-", "").replace(" ", "")
+                status[message.chat.id]["phone_server"] = transform_number(status[message.chat.id]["phone"])
 
                 status[message.chat.id]["birthday_new"] = status[message.chat.id]["birthday"].replace(".", "-")
                 status[message.chat.id]["birthday_server"] = status[message.chat.id]["birthday_new"][6:10] + "-" + status[message.chat.id]["birthday_new"][0:5]
 
                 print(status[message.chat.id]["birthday_server"])
 
-                fileurl = "https://go.city4people.ru/ajax/ajax_mainform.php?"
+                fileurl = "https://go.city4people.ru/ajax/ajax_mainform.php"
 
-                formurl = fileurl + "context=save_form,save_form&form[name]=" + status[message.chat.id]["name"][0]
-                formurl = formurl + "&form[middlename]=" + status[message.chat.id]["middle_name"][0]
-                formurl = formurl + "&form[surname]=" + status[message.chat.id]["subname"][0]
-                formurl = formurl + "&form[birthday]=" + status[message.chat.id]["birthday_server"]
-                formurl = formurl + "&form[email]=" + status[message.chat.id]["email"]
-                formurl = formurl + "&form[phone]=" + "+7 123 456-78-900" + "&form[is_car_owner]=0"
-                formurl = formurl + "&form[is_prg]=0" + "&form[city]=" + str(citiesid[status[message.chat.id]["city"]])
-                formurl = formurl + "&form[passports_raw_addr]" + status[message.chat.id]["place"]
-                formurl = formurl + "&is_mobile=false" + "&mode=sign"
+                # formurl = fileurl + "context=&form[name]=" +
+                # formurl = formurl + "&form[middlename]=" + status[message.chat.id]["middle_name"][0]
+                # formurl = formurl + "&form[surname]=" +
+                # formurl = formurl + "&=" +
+                # formurl = formurl + "&=" +
+                # formurl = formurl + "&=" +  + "&=0"
+                # formurl = formurl + "&=0" + "&=" +
+                # formurl = formurl + "&=" +
+                # formurl = formurl + "&=false" + "&mode=sign"
 
-                bot.send_message(message.chat.id, "`" + formurl + "`", parse_mode="Markdown")
+                try:
+                    status[message.chat.id]["username"] = message.from_user.username
+                except NameError:
+                    status[message.chat.id]["username"] = ""
 
-                form = requests.get(formurl, headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
+                status[message.chat.id]["params"] = {
+                    "context": ["save_form", "save_form"],
+                    "form[name]": status[message.chat.id]["name"][0],
+                    "form[middlename]": status[message.chat.id]["middle_name"][0],
+                    "form[surname]": status[message.chat.id]["subname"][0],
+                    "form[birthdate]": transform_date(status[message.chat.id]["birthday"]),
+                    "form[email]": status[message.chat.id]["email"],
+                    "form[phone]": status[message.chat.id]["phone_server"],
+                    "form[tg_username]": status[message.chat.id]["username"],
+                    "form[is_car_owner]": "0",
+                    "form[is_prg]": "0",
+                    "form[city]": str(citiesid[status[message.chat.id]["city"]]),
+                    "form[passport_raw_addr]": status[message.chat.id]["place"],
+                    "form[socials][]": "",
+                    "is_mobile": "false",
+                    "mode": "sign"
+                }
+
+
+                # form = requests.get(formurl, headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
+
+                form = requests.get("https://go.city4people.ru/ajax/ajax_mainform.php",
+                             params=status[message.chat.id]["params"],
+                             headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
                 form.encoding = "utf-8"
 
                 #bot.send_message(message.chat.id, "Заявка отправлена :)", parse_mode="Markdown")
 
-                print(formurl)
+                print(form.url)
+
+                bot.send_message(message.chat.id, "`" + form.url + "`", parse_mode="Markdown")
                 #print(form.headers)
                 print(form)
-                print(form.content)
+                print(json.loads(form.content))
+
+                try:
+                    bot.send_message(message.chat.id, json.loads(form.content)["error_text"], parse_mode="Markdown")
+                except:
+                    bot.send_message(message.chat.id, "👍 Ошибок нет")
 
 
 
