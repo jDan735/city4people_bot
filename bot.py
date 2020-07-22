@@ -154,60 +154,17 @@ def posts(message):
         bot.send_message(message.chat.id, text="🏷 Выберите тег статей, пожалуйста", reply_markup=keyboard)
 
     else:
-        #bot.send_message(message.chat.id, "Оформление подписи доступно только в личной переписке с ботом")
         bot.reply_to(message, "⚠️ Чтение постов доступно только в личной переписке с ботом")
-
-    # keyboard = telebot.types.InlineKeyboardMarkup()
-    #
-    # keyboard.add(telebot.types.InlineKeyboardButton(text="Трамвай", callback_data="tram"),
-    #              telebot.types.InlineKeyboardButton(text="Троллейбусы", callback_data="trolley"))
-    #
-    # keyboard.add(telebot.types.InlineKeyboardButton(text="Ноль смертей", callback_data="zero_deaths"),
-    #              telebot.types.InlineKeyboardButton(text="Велосипеды", callback_data="bicycles"))
-    #
-    # keyboard.add(telebot.types.InlineKeyboardButton(text="Пешеходы", callback_data="walkers"),
-    #              telebot.types.InlineKeyboardButton(text="Все", callback_data="all_posts"))
-    #         #keyboard.row(telebot.types.InlineKeyboardButton(text="Нет", callback_data="no"))
-    #
-    # status[message.chat.id] = {}
-    # status[message.chat.id]["posts"] = [0, 10]
-    #
-    # bot.send_message(message.chat.id, text="Выберите тег статей, пожалуйста", reply_markup=keyboard)
-
-    # bot.reply_to(message, url["postslist"][0]["title"])
 
 @bot.message_handler(commands=["form"])
 def form(message):
-    #bot.send_message(message.chat.id, "Для того, чтобы оставить подпись вам нужно указать:\n\n*Персональную информацию:*\n1. ФИО.\n2. Дату рождения (ДД.ММ.ГГГГ).\n3. Ваш адрес регистрации по паспорту, улица и номер дома.\n\n*Активные контакты:*\n1. Телефон.\n2. Электронную почту.", parse_mode="Markdown")
-
-        # if message.chat.type == "private":
-        #     status[message.chat.id] = {}
-        #
-        #     keyboard = telebot.types.InlineKeyboardMarkup()
-        #
-        #     for city in cities:
-        #
-        #         if len(city) == 1:
-        #             keyboard.add(telebot.types.InlineKeyboardButton(text=city[0], callback_data=city[0]))
-        #
-        #         if len(city) == 2:
-        #             keyboard.add(telebot.types.InlineKeyboardButton(text=city[0], callback_data=city[0]),
-        #                          telebot.types.InlineKeyboardButton(text=city[1], callback_data=city[1]))
-        #
-        #     bot.send_message(message.chat.id, "Для того, чтобы оставить подпись Вам нужно указать персональные данные, телефон, емайл, а также адрес регистрации по паспорту, улицу и номер дома")
-        #
-        #     bot.send_message(message.chat.id, "Выберите город", reply_markup=keyboard)
 
     if message.chat.type == "private":
         status[message.chat.id] = {}
-        #bot.send_message(message.chat.id, "Для того, чтобы оставить подпись Вам нужно указать персональные данные, телефон, емайл, а также адрес регистрации по паспорту, улицу и номер дома")
-
 
         keyboard = telebot.types.InlineKeyboardMarkup()
 
         keyboard.add(telebot.types.InlineKeyboardButton(text="👍 Продолжить", callback_data="more"))
-        # keyboard.add(telebot.types.InlineKeyboardButton(text="Да", callback_data="yes_form"), telebot.types.InlineKeyboardButton(text="Нет", callback_data="no_form"))
-        #keyboard.row(telebot.types.InlineKeyboardButton(text="Нет", callback_data="no"))
 
         bot.reply_to(message, "Для того, чтобы оставить подпись Вам нужно указать персональные данные, телефон, электронную почту, а также адрес регистрации по паспорту, улицу и номер дома", reply_markup=keyboard)
 
@@ -217,8 +174,6 @@ def form(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
-
-    print(call.data)
 
     if call.data in urllist:
         try:
@@ -232,8 +187,6 @@ def callback_worker(call):
             pass
         else:
             urllist[call.data]["postslist"] = getPosts(urllist[call.data]["posts"])
-
-        print(len(urllist[call.data]["postslist"]))
 
         if call.message.chat.id in status:
             pass
@@ -417,19 +370,7 @@ def text(message):
                 status[message.chat.id]["birthday_new"] = status[message.chat.id]["birthday"].replace(".", "-")
                 status[message.chat.id]["birthday_server"] = status[message.chat.id]["birthday_new"][6:10] + "-" + status[message.chat.id]["birthday_new"][0:5]
 
-                print(status[message.chat.id]["birthday_server"])
-
                 fileurl = "https://go.city4people.ru/ajax/ajax_mainform.php"
-
-                # formurl = fileurl + "context=&form[name]=" +
-                # formurl = formurl + "&form[middlename]=" + status[message.chat.id]["middle_name"][0]
-                # formurl = formurl + "&form[surname]=" +
-                # formurl = formurl + "&=" +
-                # formurl = formurl + "&=" +
-                # formurl = formurl + "&=" +  + "&=0"
-                # formurl = formurl + "&=0" + "&=" +
-                # formurl = formurl + "&=" +
-                # formurl = formurl + "&=false" + "&mode=sign"
 
                 try:
                     status[message.chat.id]["username"] = message.from_user.username
@@ -454,39 +395,15 @@ def text(message):
                     "mode": "sign"
                 }
 
-
-                # form = requests.get(formurl, headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
-
                 form = requests.get("https://go.city4people.ru/ajax/ajax_mainform.php",
                              params=status[message.chat.id]["params"],
                              headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
                 form.encoding = "utf-8"
 
-                #bot.send_message(message.chat.id, "Заявка отправлена :)", parse_mode="Markdown")
-
-                print(form.url)
-
-                bot.send_message(message.chat.id, "`" + form.url + "`", parse_mode="Markdown")
-                #print(form.headers)
-                print(form)
-                print(json.loads(form.content))
-
                 try:
                     bot.send_message(message.chat.id, json.loads(form.content)["error_text"], parse_mode="Markdown")
                 except:
                     bot.send_message(message.chat.id, "👍 Ошибок нет")
-
-
-
-                # bot.send_message(message.chat.id, "Фамилия - *" + status[message.chat.id]["subname"][0] + "*\n" +
-                #                                  "Имя - *" + status[message.chat.id]["name"][0] + "*\n" +
-                #                                  "Отчество - *" + status[message.chat.id]["middle_name"][0] + "*\n" +
-                #                                  "День Рождения - *" + status[message.chat.id]["birthday"] + "*\n" +
-                #                                  "Город - *" + status[message.chat.id]["city"] + "*\n" +
-                #                                  "Место - *" + status[message.chat.id]["place"] + "*\n" +
-                #                                  "Почта - *" + status[message.chat.id]["email"] + "*\n" +
-                #                                  "Номер телефона - *" + status[message.chat.id]["phone"] + "*",
-                #                                  parse_mode="Markdown")
 
 
 
@@ -496,8 +413,5 @@ def text(message):
 
             else:
                 bot.send_message(message.chat.id, "⚠️ Введите правильный номер")
-
-        # else:
-        #     bot.reply_to(message, "Я еще не умею работать с текстом")
 
 bot.polling()
