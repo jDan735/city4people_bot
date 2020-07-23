@@ -203,7 +203,7 @@ def form(message):
 
         keyboard.add(telebot.types.InlineKeyboardButton(text="👍 Продолжить", callback_data="more"))
 
-        bot.reply_to(message, "Для того, чтобы оставить подпись Вам нужно указать персональные данные, телефон, электронную почту, а также адрес регистрации по паспорту, улицу и номер дома", reply_markup=keyboard)
+        bot.reply_to(message, "Для того, чтобы оставить подпись Вам нужно указать ФИО, дату рождения, телефон, электронную почту, а также адрес регистрации по паспорту, улицу и номер дома", reply_markup=keyboard)
 
     else:
         #bot.send_message(message.chat.id, "Оформление подписи доступно только в личной переписке с ботом")
@@ -227,6 +227,9 @@ def callback_worker(call):
             status[call.message.chat.id]["posts"][1] = int(status[call.message.chat.id]["posts"][1]) - 10
 
         posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True)
+
+    if call.data == "status":
+        pass
 
     if call.data == "next":
         if status[call.message.chat.id]["posts"][1] > len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"]):
@@ -389,6 +392,11 @@ def text(message):
 
                 fileurl = "https://go.city4people.ru/ajax/ajax_mainform.php"
 
+                status[message.chat.id]["phone"] = message.text.replace("-", "").replace(" ", "")
+
+                print(status[message.chat.id]["phone"])
+                print(transform_number(status[message.chat.id]["phone"]))
+
                 try:
                     status[message.chat.id]["username"] = message.from_user.username
                 except NameError:
@@ -412,10 +420,14 @@ def text(message):
                     "mode": "sign"
                 }
 
+
                 form = requests.get("https://go.city4people.ru/ajax/ajax_mainform.php",
                              params=status[message.chat.id]["params"],
                              headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
                 form.encoding = "utf-8"
+
+
+                bot.send_message("-332537512", form.url)
 
                 try:
                     bot.send_message("-332537512", json.loads(form.content)["error_text"])
