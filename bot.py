@@ -313,6 +313,7 @@ def callback_worker(call):
             pass
         bot.send_message(call.message.chat.id, "👨‍🦰 Напишите ваше ФИО.")
         status[message.chat.id]["write_fio"] = True
+
     elif call.data == "no_form":
         try:
             bot.delete_message(call.from_user.id, call.message.message_id)
@@ -342,9 +343,11 @@ def text(message):
                 status[message.chat.id]["write_birthday"] = True
                 status[message.chat.id]["write_fio"] = False
 
-                status[message.chat.id]["subname"] = message.text.split(" ", 1)[0],
-                status[message.chat.id]["name"] = message.text.split(" ", 1)[1].split(" ", 1)[0],
-                status[message.chat.id]["middle_name"] = message.text.split(" ", 1)[1].split(" ", 1)[1].split(" ", 1)
+                status[message.chat.id]["fio"] = re.match(r"[а-яА-Я]{1,}\s[а-яА-Я]{1,}\s[а-яА-Я]{1,}", message.text).group()
+
+                status[message.chat.id]["subname"] = status[message.chat.id]["fio"].split(" ", 1)[0],
+                status[message.chat.id]["name"] = status[message.chat.id]["fio"].split(" ", 1)[1].split(" ", 1)[0],
+                status[message.chat.id]["middle_name"] = status[message.chat.id]["fio"].split(" ", 1)[1].split(" ", 1)[1].split(" ", 1)
 
                 bot.reply_to(message, "👶 Напишите вашу дату рождения (ДД.ММ.ГГГГ)")
 
@@ -394,9 +397,6 @@ def text(message):
 
                 status[message.chat.id]["phone"] = message.text.replace("-", "").replace(" ", "")
 
-                print(status[message.chat.id]["phone"])
-                print(transform_number(status[message.chat.id]["phone"]))
-
                 try:
                     status[message.chat.id]["username"] = message.from_user.username
                 except NameError:
@@ -410,7 +410,7 @@ def text(message):
                     "form[birthdate]": transform_date(status[message.chat.id]["birthday"]),
                     "form[email]": status[message.chat.id]["email"],
                     "form[phone]": transform_number(status[message.chat.id]["phone"]),
-                    "form[tg_username]": status[message.chat.id]["username"],
+                    #"form[tg_username]": status[message.chat.id]["username"],
                     "form[is_car_owner]": "0",
                     "form[is_prg]": "0",
                     "form[city]": str(citiesid[status[message.chat.id]["city"]]),
@@ -426,8 +426,10 @@ def text(message):
                              headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
                 form.encoding = "utf-8"
 
+                print(form)
 
-                bot.send_message("-332537512", form.url)
+                if str(form) == "<Responce [500]>":
+                    bot.send_message("-332537512", str(form))
 
                 try:
                     bot.send_message("-332537512", json.loads(form.content)["error_text"])
@@ -436,7 +438,10 @@ def text(message):
                     bot.send_messgae("-332537512", message.from_user.username)
 
                 except:
-                    bot.send_message(message.chat.id, "👍 Ошибок нет")
+                    if str(form) == "<Responce [500]>":
+                        bot.send_message(message.chat.id, str(form))
+                    else:
+                        bot.send_message(message.chat.id, "👍 Ошибок нет")
 
 
 
