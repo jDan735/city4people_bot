@@ -119,7 +119,44 @@ for var in vars:
     print("[Load] " + var)
 # =======================================================================
 
+def posts_ui(call, back, next, continue_posts):
 
+    try:
+        bot.delete_message(call.from_user.id, call.message.message_id)
+    except:
+        pass
+
+
+    if continue_posts:
+        pass
+
+    else:
+        if "postlist" in urllist[call.data]:
+            pass
+        else:
+            urllist[call.data]["postslist"] = getPosts(urllist[call.data]["posts"])
+
+    if call.message.chat.id in status:
+        pass
+    else:
+        status[call.message.chat.id] = {}
+        status[call.message.chat.id]["posts"] = [0, 10]
+
+    keyboard = telebot.types.InlineKeyboardMarkup()
+
+    for post in urllist[status[call.message.chat.id]["posts_type"]]["postslist"][back:next]:
+        # bot.send_message("-332537512", post["title"])
+        # bot.send_message("-332537512", urllist[call.data]["postslist"].index(post))
+        status[call.message.chat.id]["posts_last_id"] = urllist[status[call.message.chat.id]["posts_type"]]["postslist"].index(post) + 1
+
+        keyboard.add(telebot.types.InlineKeyboardButton(text=post["title"],
+            callback_data="TG_POST_ID=" + str(urllist[status[call.message.chat.id]["posts_type"]]["postslist"].index(post)) + "," + status[call.message.chat.id]["posts_type"]))
+
+    keyboard.add(telebot.types.InlineKeyboardButton(text="👈 Назад", callback_data="back"),
+                 telebot.types.InlineKeyboardButton(text=str(status[call.message.chat.id]["posts_last_id"]) + " / " + str(len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"])), callback_data="status"),
+                 telebot.types.InlineKeyboardButton(text="Вперед 👉", callback_data="next"))
+
+    bot.send_message(call.message.chat.id, "🔎 Выберите статью", reply_markup=keyboard)
 
 # urllist["трамвай"]["postslist"] = getPosts(urllist["трамвай"]["posts"])
 
@@ -176,33 +213,29 @@ def form(message):
 def callback_worker(call):
 
     if call.data in urllist:
-        try:
-            bot.delete_message(call.from_user.id, call.message.message_id)
-        except:
-            pass
+        status[call.message.chat.id]["posts_type"] = call.data
+        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], False)
 
-        keyboard = telebot.types.InlineKeyboardMarkup()
 
-        if "postlist" in urllist[call.data]:
+    if call.data == "back":
+        # if status[call.message.chat.id]["posts"][0] == 0:
+        #     pass
+        if status[call.message.chat.id]["posts"][0] - 10 < 0:
+            bot.send_message("-332537512", "Pass_back")
+        else:
+            status[call.message.chat.id]["posts"][0] = int(status[call.message.chat.id]["posts"][0]) - 10
+            status[call.message.chat.id]["posts"][1] = int(status[call.message.chat.id]["posts"][1]) - 10
+
+        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True)
+
+    if call.data == "next":
+        if status[call.message.chat.id]["posts"][1] > len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"]):
             pass
         else:
-            urllist[call.data]["postslist"] = getPosts(urllist[call.data]["posts"])
+            status[call.message.chat.id]["posts"][0] = int(status[call.message.chat.id]["posts"][0]) + 10
+            status[call.message.chat.id]["posts"][1] = int(status[call.message.chat.id]["posts"][0]) + 10
 
-        if call.message.chat.id in status:
-            pass
-        else:
-            status[call.message.chat.id] = {}
-            status[call.message.chat.id]["posts"] = [0, 10]
-
-        for post in urllist[call.data]["postslist"][0:10]:
-            keyboard.add(telebot.types.InlineKeyboardButton(text=post["title"],
-                    callback_data="TG_POST_ID=" + str(urllist[call.data]["postslist"].index(post)) + "," + call.data))
-
-        keyboard.add(telebot.types.InlineKeyboardButton(text="👈 Назад", callback_data="posts_back"),
-                     telebot.types.InlineKeyboardButton(text=str(status[call.message.chat.id]["posts"][0]) + " / " + str(status[call.message.chat.id]["posts"][1]), callback_data="status"),
-                     telebot.types.InlineKeyboardButton(text="Вперед 👉", callback_data="posts_next"))
-
-        bot.send_message(call.message.chat.id, "🔎 Выберите статью", reply_markup=keyboard)
+        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True)
 
     if re.match("TG_POST_ID=", call.data):
         try:
