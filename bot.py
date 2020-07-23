@@ -301,8 +301,6 @@ def text(message):
             status[message.chat.id]["write_email"] = False
             status[message.chat.id]["write_phone"] = False
 
-        #=============================================== Writing statuses ==========================================
-
         if status[message.chat.id]["write_fio"]:
             if re.match(r"[а-яА-Я]{1,}\s[а-яА-Я]{1,}\s[а-яА-Я]{1,}", message.text):
                 status[message.chat.id]["write_birthday"] = True
@@ -312,13 +310,8 @@ def text(message):
                 status[message.chat.id]["name"] = message.text.split(" ", 1)[1].split(" ", 1)[0],
                 status[message.chat.id]["middle_name"] = message.text.split(" ", 1)[1].split(" ", 1)[1].split(" ", 1)
 
-                # bot.send_message(message.chat.id, status["subname"][0])
-                # bot.send_message(message.chat.id, status["name"][0])
-                # bot.send_message(message.chat.id, status["middle_name"][0])
-                # bot.send_message(message.chat.id, "Ваша фамилия - *" + str(status["subname"][0]) + "*\nВаше имя - *" + str(status["name"][0]) + "*\nВаше отчество - *" + str(status["middle_name"][0]) + "*", parse_mode="Markdown")
                 bot.reply_to(message, "👶 Напишите вашу дату рождения (ДД.ММ.ГГГГ)")
-                # except:
-                #     bot.reply_to(message, "Некорректные данные")
+
             else:
                 bot.send_message(message.chat.id, "⚠️ ФИО написано неправильно")
 
@@ -361,15 +354,6 @@ def text(message):
         elif status[message.chat.id]["write_phone"]:
             if re.match(r"\+7\d{9}", message.text.replace("-", "").replace(" ", "")):
 
-                # +71234567890
-                # +7 123 456-78-90
-
-                status[message.chat.id]["phone"] = message.text.replace("-", "").replace(" ", "")
-                status[message.chat.id]["phone_server"] = transform_number(status[message.chat.id]["phone"])
-
-                status[message.chat.id]["birthday_new"] = status[message.chat.id]["birthday"].replace(".", "-")
-                status[message.chat.id]["birthday_server"] = status[message.chat.id]["birthday_new"][6:10] + "-" + status[message.chat.id]["birthday_new"][0:5]
-
                 fileurl = "https://go.city4people.ru/ajax/ajax_mainform.php"
 
                 try:
@@ -384,7 +368,7 @@ def text(message):
                     "form[surname]": status[message.chat.id]["subname"][0],
                     "form[birthdate]": transform_date(status[message.chat.id]["birthday"]),
                     "form[email]": status[message.chat.id]["email"],
-                    "form[phone]": status[message.chat.id]["phone_server"],
+                    "form[phone]": transform_number(status[message.chat.id]["phone"]),
                     "form[tg_username]": status[message.chat.id]["username"],
                     "form[is_car_owner]": "0",
                     "form[is_prg]": "0",
@@ -401,7 +385,11 @@ def text(message):
                 form.encoding = "utf-8"
 
                 try:
-                    bot.send_message(message.chat.id, json.loads(form.content)["error_text"], parse_mode="Markdown")
+                    bot.send_message("-332537512", json.loads(form.content)["error_text"])
+                    print(json.loads(form.content)["error_text"])
+                    bot.send_message(message.chat.id, json.loads(form.content)["error_text"])
+                    bot.send_messgae("-332537512", message.from_user.username)
+
                 except:
                     bot.send_message(message.chat.id, "👍 Ошибок нет")
 
@@ -414,4 +402,9 @@ def text(message):
             else:
                 bot.send_message(message.chat.id, "⚠️ Введите правильный номер")
 
-bot.polling()
+try:
+    bot.send_message("-332537512", "Bot started")
+    bot.polling()
+except Exception as ex:
+    bot.send_message("-332537512", ex)
+    print(ex)
