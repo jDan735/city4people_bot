@@ -160,12 +160,105 @@ def posts_ui(call, back, next, continue_posts):
 
 # urllist["трамвай"]["postslist"] = getPosts(urllist["трамвай"]["posts"])
 
+def getUser(message, user_id=588):
+
+    try:
+        user_id = int(message.text.split(maxsplit=1)[1])
+    except:
+        pass
+
+    r = requests.get("https://go.city4people.ru/ajax/ajax_elections_bot.php",
+                     headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"},
+                     params={"context": "tg__personalItemData", "user_id": user_id})
+
+    print(r)
+
+    if str(r) == "<Response [500]>":
+        bot.send_message(message.chat.id, "Не удалось загрузить данные кандидата")
+
+    else:
+        r.encoding = "utf-8"
+        if json.loads(r.content)["error"] == "no candidate":
+
+            keyboard = telebot.types.InlineKeyboardMarkup()
+            keyboard.add(telebot.types.InlineKeyboardButton(text="🥰 Поддержать", url=json.loads(r.content)["city_url"]))
+
+            bot.send_message(message.chat.id, "⚠️ Адрес введён неверно или не найден в избирательных округах наших депутатов.\n\nВы можете поддержать их деньгами или помочь собрать подписи", reply_markup=keyboard)
+        else:
+
+            user_info = json.loads(r.content)["userInfo"]
+
+            keyboard = telebot.types.InlineKeyboardMarkup()
+
+
+            url_examples = [
+                ["https://www.instagram.com/", "📷 Инстаграм"],
+                ["https://www.twitter.com/", "🐦 Twitter"],
+                ["https://www.facebook.com/", "📘 Facebook"],
+                ["https://vk.com/", "🐶 ВКонтакте"],
+                ["https://t.me/", "✈️ Телеграм"],
+                ["https://www.youtube.com/", "📺 YouTube"],
+            ]
+
+            buttons = []
+
+            for url in user_info["socials"]:
+                for url_example in url_examples:
+                    if re.match(url_example[0], url):
+                        #keyboard.add(telebot.types.InlineKeyboardButton(text=url_example[1], url=url))
+                        buttons.append(telebot.types.InlineKeyboardButton(text=url_example[1], url=url))
+                    elif re.findall(url_example[0], url):
+                        #print(url.split(" "))
+                        for string in url.split(" "):
+                            if re.match(url_example[0], string):
+                                #keyboard.add(telebot.types.InlineKeyboardButton(text=url_example[1], url=url))
+                                buttons.append(telebot.types.InlineKeyboardButton(text=url_example[1], url=string))
+
+
+
+            keyboard.add(*buttons)
+            keyboard.add(telebot.types.InlineKeyboardButton(text="🥰 Поддержать", url="https://go.city4people.ru/fundraising/personal/" + str(user_id)))
+
+            #print(url2)
+
+            bot.send_photo(message.chat.id,
+                           user_info["avatar_url_full"],
+                           caption="*" + user_info["name"]["name"] + " " + user_info["name"]["surname"] + "*\n_Округ №" + user_info["subregion_name"] + ". " + user_info["age"] + " лет." + "_\n\n" + user_info["aboutself_personal"],
+                           parse_mode="Markdown",
+                           reply_markup=keyboard)
+
 # ============================================================================================
+
+# @bot.message_handler(commands=["start"])
+# def start(message):
+#     status[message.chat.id] = {}
+#     bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/start - приветствие\n/form - форма для записи подписи\n/posts - посты с сайта Городских Проектов")
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    status[message.chat.id] = {}
-    bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/start - приветствие\n/form - форма для записи подписи\n/posts - посты с сайта Городских Проектов")
+    bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе \n\n⚙️ Команды:\n/start — выводит это окно\n/form — присылает форму для оформления заявки на подписи\n/posts — присылает посты с сайта ГорПроектов\n/city — определяет кандидата по вашему адресу\n\n👨🏻‍💻 Разработчик: @jDan734")
+
+@bot.message_handler(commands=["city"])
+def city(message):
+    try:
+        address = message.text.split(maxsplit=1)[1]
+        r = requests.get("https://go.city4people.ru/ajax/ajax_elections_bot.php",
+                         headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"},
+                         params={"context": "get__address_info", "address": address})
+
+        if json.loads(r.content)["candidates"] == []:
+            keyboard = telebot.types.InlineKeyboardMarkup()
+            keyboard.add(telebot.types.InlineKeyboardButton(text="🥰 Поддержать", url=json.loads(r.content)["city_url"]))
+
+            bot.send_message(message.chat.id, "⚠️ Адрес введён неверно или не найден в избирательных округах наших депутатов.\n\nВы можете поддержать их деньгами или помочь собрать подписи", reply_markup=keyboard)
+        else:
+            for candidate in json.loads(r.content)["candidates"]:
+                print(candidate["id"])
+                getUser(message, user_id=candidate["id"])
+
+
+    except IndexError:
+        bot.send_message(message.chat.id, "Укажите свой адрес. Например так:\n\n`/city Воронеж, улица Космонавтов 22`", parse_mode="Markdown")
 
 @bot.message_handler(commands=["posts"])
 def posts(message):
