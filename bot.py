@@ -119,12 +119,14 @@ for var in vars:
     print("[Load] " + var)
 # =======================================================================
 
-def posts_ui(call, back, next, continue_posts):
-
-    try:
-        bot.delete_message(call.from_user.id, call.message.message_id)
-    except:
+def posts_ui(call, back, next, continue_posts, btn_callback=0):
+    if btn_callback:
         pass
+    else:
+        try:
+            bot.delete_message(call.from_user.id, call.message.message_id)
+        except:
+            pass
 
 
     if continue_posts:
@@ -156,7 +158,10 @@ def posts_ui(call, back, next, continue_posts):
                  telebot.types.InlineKeyboardButton(text=str(status[call.message.chat.id]["posts_last_id"]) + " / " + str(len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"])), callback_data="status"),
                  telebot.types.InlineKeyboardButton(text="Вперед 👉", callback_data="next"))
 
-    bot.send_message(call.message.chat.id, "🔎 Выберите статью", reply_markup=keyboard)
+    if btn_callback:
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="🔎 Выберите статью", reply_markup=keyboard)
+    else:
+        bot.send_message(call.message.chat.id, "🔎 Выберите статью", reply_markup=keyboard)
 
 # urllist["трамвай"]["postslist"] = getPosts(urllist["трамвай"]["posts"])
 
@@ -307,7 +312,7 @@ def callback_worker(call):
 
     if call.data in urllist:
         status[call.message.chat.id]["posts_type"] = call.data
-        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], False)
+        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], False, False)
 
 
     if call.data == "back":
@@ -319,7 +324,7 @@ def callback_worker(call):
             status[call.message.chat.id]["posts"][0] = int(status[call.message.chat.id]["posts"][0]) - 10
             status[call.message.chat.id]["posts"][1] = int(status[call.message.chat.id]["posts"][1]) - 10
 
-        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True)
+        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True, False)
 
     if call.data == "status":
         pass
@@ -331,7 +336,7 @@ def callback_worker(call):
             status[call.message.chat.id]["posts"][0] = int(status[call.message.chat.id]["posts"][0]) + 10
             status[call.message.chat.id]["posts"][1] = int(status[call.message.chat.id]["posts"][0]) + 10
 
-        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True)
+        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True, True)
 
     if re.match("TG_POST_ID=", call.data):
         try:
