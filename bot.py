@@ -197,8 +197,6 @@ def getUser(message, user_id=588):
                      headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"},
                      params={"context": "tg__personalItemData", "user_id": user_id})
 
-    print(r)
-
     if str(r) == "<Response [500]>":
         bot.send_message(message.chat.id, "Не удалось загрузить данные кандидата")
 
@@ -260,7 +258,6 @@ def getUser(message, user_id=588):
 #     status[message.chat.id] = {}
 #     bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/start - приветствие\n/form - форма для записи подписи\n/posts - посты с сайта Городских Проектов")
 def fix(message):
-    print("fix")
     try:
         status[message.chat.id]
     except:
@@ -272,7 +269,6 @@ def fix(message):
     status[message.chat.id]["write_email"] = False
     status[message.chat.id]["write_phone"] = False
     status[message.chat.id]["find_in_adress"] = False
-    print("end")   
 
 @bot.message_handler(commands=["start"])
 def start(message):
@@ -297,10 +293,14 @@ def hide_menu(message):
     bot.send_message(message.chat.id, "Меню уже скрыто", reply_markup='{"hide_keyboard":true}')
 
 @bot.message_handler(commands=["city"])
-def city(message):    
+def city(message, place=False):    
 
     try:
-        address = message.text.split(maxsplit=1)[1]
+        if place:
+            address = place
+        else:
+            address = message.text.split(maxsplit=1)[1]
+
         r = requests.get("https://go.city4people.ru/ajax/ajax_elections_bot.php",
                          headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"},
                          params={"context": "get__address_info", "address": address})
@@ -312,12 +312,24 @@ def city(message):
             bot.send_message(message.chat.id, "⚠️ Адрес введён неверно или не найден в избирательных округах наших депутатов.\n\nВы можете поддержать их деньгами или помочь собрать подписи", reply_markup=keyboard)
         else:
             for candidate in json.loads(r.content)["candidates"]:
-                print(candidate["id"])
                 getUser(message, user_id=candidate["id"])
 
 
     except IndexError:
-        bot.send_message(message.chat.id, "Укажите свой адрес. Например так:\n\n`/city Воронеж, улица Космонавтов 22`", parse_mode="Markdown")
+        #bot.send_message(message.chat.id, "Укажите свой адрес. Например так:\n\n`/city Воронеж, улица Космонавтов 22`", parse_mode="Markdown")
+        bot.send_message(message.chat.id, "⚠️ Укажите свой адрес", parse_mode="Markdown")
+
+        try:
+            status[message.chat.id]
+        except:
+            status[message.chat.id] = {}
+
+        status[message.chat.id]["write_city"] = True
+        status[message.chat.id]["write_fio"] = False
+
+@bot.message_handler(commands=["debug"])
+def debug(message):
+    bot.send_message("-1001335444502", json.dumps(status))
 
 @bot.message_handler(commands=["posts"])
 def posts(message):
@@ -363,6 +375,21 @@ def form(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_worker(call):
+
+    try:
+        status[call.message.chat.id]
+
+    except:
+
+        status[call.message.chat.id] = {}
+
+        status[call.message.chat.id]["write_fio"] = False
+        status[call.message.chat.id]["write_birthday"] = False
+        status[call.message.chat.id]["write_place"] = False
+        status[call.message.chat.id]["write_email"] = False
+        status[call.message.chat.id]["write_phone"] = False
+        status[call.message.chat.id]["find_in_adress"] = False 
+        status[call.message.chat.id]["write_city"] = False 
 
     if call.data in urllist:
         status[call.message.chat.id]["posts_type"] = call.data
@@ -420,6 +447,7 @@ def callback_worker(call):
                     except:
                         pass
 
+                    #bot.send_message(call.message.chat.id, status)
                     status[call.message.chat.id]["city"] = city1
                     status[call.message.chat.id]["write_fio"] = True
 
@@ -434,7 +462,6 @@ def callback_worker(call):
 
                 status[call.message.chat.id]["city"] = city[0]
                 status[call.message.chat.id]["write_fio"] = True
-                print("write_fio")
 
                 bot.send_message(call.message.chat.id, "👍 Хорошо. Ваш город *" + city[0] + "*. Напишите ваше ФИО", parse_mode="Markdown")
 
@@ -446,7 +473,7 @@ def callback_worker(call):
 
         bot.send_message(call.message.chat.id, "😭")
 
-    if call.data == "more":
+    elif call.data == "more":
         try:
             bot.delete_message(call.from_user.id, call.message.message_id)
         except:
@@ -503,6 +530,9 @@ def text(message):
             status[message.chat.id]["write_email"] = False
             status[message.chat.id]["write_phone"] = False
             status[message.chat.id]["find_in_adress"] = False 
+            status[message.chat.id]["write_city"] = False 
+
+        status[message.chat.id]["message_text"] = message.text
 
         # print(status[message.chat.id]["write_fio"])
 
@@ -521,7 +551,11 @@ def text(message):
         # print(status[message.chat.id]["write_fio"])
 
         #if status[message.chat.id]["write_fio"]:
-        if "write_fio" in status[message.chat.id]:
+        if status[message.chat.id]["write_city"]:
+            city(message, message.text)
+            status[message.chat.id]["write_city"] = False
+
+        elif status[message.chat.id]["write_fio"]:
             if re.match(r"[а-яА-Я]{1,}\s[а-яА-Я]{1,}\s[а-яА-Я]{1,}", message.text):
                 status[message.chat.id]["write_birthday"] = True
                 status[message.chat.id]["write_fio"] = False
@@ -609,8 +643,6 @@ def text(message):
                              headers={"User-Agent": "Mozilla/5.0 (Windows NT 6.1; rv:79.0) Gecko/20100101 Firefox/79.0"})
                 form.encoding = "utf-8"
 
-                print(form)
-
                 if str(form) == "<Responce [500]>":
                     bot.send_message("-332537512", str(form))
 
@@ -635,9 +667,16 @@ def text(message):
             else:
                 bot.send_message(message.chat.id, "⚠️ Введите правильный номер")
 
+@bot.message_handler(content_types=["new_chat_members"])
+def new_chat_member(message):
+    if message.new_chat_member.username == "city4people_BETA_tgbot" or message.new_chat_member.username == "city4people_tgbot":
+        bot.reply_to(message, "✋ Привет! Я бот для определения кандидатов в вашем городе \n\n⚙️ Команды:\n/start — выводит это окно\n/form — присылает форму для оформления заявки на подписи\n/posts — присылает посты с сайта ГорПроектов\n/city — определяет кандидата по вашему адресу\n\n👨🏻‍💻 Разработчик: @jDan734")
+
+
 try:
-    bot.send_message("-332537512", "Bot started")
+    bot.send_message("-1001225377568", "Bot started")
     bot.polling()
 except Exception as ex:
-    bot.send_message("-332537512", ex)
+    bot.send_message("-1001225377568", ex)
+    bot.send_message("-1001335444502", json.dumps(status))
     print(ex)

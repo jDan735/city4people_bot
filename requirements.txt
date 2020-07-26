@@ -1,2 +1,4 @@
 pyTelegramBotAPI
 beautifulsoup4
+colorama
+termcolor
