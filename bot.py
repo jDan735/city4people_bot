@@ -17,6 +17,11 @@ else:
     with open("./token.txt") as token:
         bot = telebot.TeleBot(token.read())
 
+        from colorama import Fore, Back, Style, init
+        from termcolor import colored
+
+        init()
+
 cities = [
     ["Владимир", "Воронеж"],
     ["Иваново", "Калуга"],
@@ -116,7 +121,7 @@ def transform_date(date):
 vars = ["tram", "trolley", "zero_deaths", "bicycles", "walkers", "all_posts"]
 for var in vars:
     urllist[var]["postslist"] = getPosts(urllist[var]["posts"])
-    print("[Load] " + var)
+    print("\033[32m Load\033[0m " + var)
 # =======================================================================
 
 def posts_ui(call, back, next, continue_posts, btn_callback=0):
@@ -154,9 +159,25 @@ def posts_ui(call, back, next, continue_posts, btn_callback=0):
         keyboard.add(telebot.types.InlineKeyboardButton(text=post["title"],
             callback_data="TG_POST_ID=" + str(urllist[status[call.message.chat.id]["posts_type"]]["postslist"].index(post)) + "," + status[call.message.chat.id]["posts_type"]))
 
-    keyboard.add(telebot.types.InlineKeyboardButton(text="👈 Назад", callback_data="back"),
-                 telebot.types.InlineKeyboardButton(text=str(status[call.message.chat.id]["posts_last_id"]) + " / " + str(len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"])), callback_data="status"),
-                 telebot.types.InlineKeyboardButton(text="Вперед 👉", callback_data="next"))
+    buttons = []
+
+    if str(status[call.message.chat.id]["posts_last_id"]) == "10":
+        pass
+    else:
+        buttons.append(telebot.types.InlineKeyboardButton(text="👈 Назад", callback_data="back"))
+
+    buttons.append(telebot.types.InlineKeyboardButton(text=str(status[call.message.chat.id]["posts_last_id"]) + " / " + str(len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"])), callback_data="status"))
+
+    if status[call.message.chat.id]["posts_last_id"] == len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"]):
+        pass
+    else:
+        buttons.append(telebot.types.InlineKeyboardButton(text="Вперед 👉", callback_data="next"))
+
+    keyboard.add(*buttons)
+
+    #keyboard.add(telebot.types.InlineKeyboardButton(text="👈 Назад", callback_data="back"),
+    #             telebot.types.InlineKeyboardButton(text=str(status[call.message.chat.id]["posts_last_id"]) + " / " + str(len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"])), callback_data="status"),
+    #             telebot.types.InlineKeyboardButton(text="Вперед 👉", callback_data="next"))
 
     if btn_callback:
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="🔎 Выберите статью", reply_markup=keyboard)
@@ -238,13 +259,46 @@ def getUser(message, user_id=588):
 # def start(message):
 #     status[message.chat.id] = {}
 #     bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе\n\nКоманды:\n/start - приветствие\n/form - форма для записи подписи\n/posts - посты с сайта Городских Проектов")
+def fix(message):
+    print("fix")
+    try:
+        status[message.chat.id]
+    except:
+        status[message.chat.id] = {}
+
+    status[message.chat.id]["write_fio"] = False
+    status[message.chat.id]["write_birthday"] = False
+    status[message.chat.id]["write_place"] = False
+    status[message.chat.id]["write_email"] = False
+    status[message.chat.id]["write_phone"] = False
+    status[message.chat.id]["find_in_adress"] = False
+    print("end")   
 
 @bot.message_handler(commands=["start"])
 def start(message):
-    bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе \n\n⚙️ Команды:\n/start — выводит это окно\n/form — присылает форму для оформления заявки на подписи\n/posts — присылает посты с сайта ГорПроектов\n/city — определяет кандидата по вашему адресу\n\n👨🏻‍💻 Разработчик: @jDan734")
+    #if message.chat.type == "supergroup":
+    bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе \n\n⚙️ Команды:\n/start — выводит это окно\n/form — присылает форму для оформления заявки на подписи\n/posts — присылает посты с сайта ГорПроектов\n/city — определяет кандидата по вашему адресу\n\n👨🏻‍💻 Разработчик: @jDan734", reply_markup=None)
+
+    # elif message.chat.type == "private":
+    #     markup = telebot.types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    #     menu = [  
+    #         telebot.types.KeyboardButton("🚀 Старт"),
+    #         telebot.types.KeyboardButton("🖊 Оформление подписи"),
+    #         telebot.types.KeyboardButton("📖 Посты"),
+    #         telebot.types.KeyboardButton("🔍 Найти кандидата"),
+    #     ]
+
+    #     markup.add(*menu)
+
+    #     bot.send_message(message.chat.id, "✋ Привет! Я бот для определения кандидатов в вашем городе \n\n👨🏻‍💻 Разработчик: @jDan734", reply_markup=markup)
+
+@bot.message_handler(commands=["hide_menu"])
+def hide_menu(message):
+    bot.send_message(message.chat.id, "Меню уже скрыто", reply_markup='{"hide_keyboard":true}')
 
 @bot.message_handler(commands=["city"])
-def city(message):
+def city(message):    
+
     try:
         address = message.text.split(maxsplit=1)[1]
         r = requests.get("https://go.city4people.ru/ajax/ajax_elections_bot.php",
@@ -267,7 +321,6 @@ def city(message):
 
 @bot.message_handler(commands=["posts"])
 def posts(message):
-
     if message.chat.type == "private":
 
         keyboard = telebot.types.InlineKeyboardMarkup()
@@ -295,7 +348,8 @@ def posts(message):
 def form(message):
 
     if message.chat.type == "private":
-        status[message.chat.id] = {}
+
+        #status[message.chat.id] = {}
 
         keyboard = telebot.types.InlineKeyboardMarkup()
 
@@ -312,7 +366,8 @@ def callback_worker(call):
 
     if call.data in urllist:
         status[call.message.chat.id]["posts_type"] = call.data
-        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], False, False)
+        #posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], False, False)
+        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True, True)
 
 
     if call.data == "back":
@@ -324,10 +379,13 @@ def callback_worker(call):
             status[call.message.chat.id]["posts"][0] = int(status[call.message.chat.id]["posts"][0]) - 10
             status[call.message.chat.id]["posts"][1] = int(status[call.message.chat.id]["posts"][1]) - 10
 
-        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True, False)
+        try:
+            posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True, False)
+        except Exception:
+            bot.send_message("-332537512", "back_posts_io: " + str(Exception))
 
     if call.data == "status":
-        pass
+        bot.answer_callback_query(callback_query_id=call.id, text="Не надо кликать на кнопку со статусом :)")
 
     if call.data == "next":
         if status[call.message.chat.id]["posts"][1] > len(urllist[status[call.message.chat.id]["posts_type"]]["postslist"]):
@@ -336,7 +394,11 @@ def callback_worker(call):
             status[call.message.chat.id]["posts"][0] = int(status[call.message.chat.id]["posts"][0]) + 10
             status[call.message.chat.id]["posts"][1] = int(status[call.message.chat.id]["posts"][0]) + 10
 
-        posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True, True)
+        try:
+            posts_ui(call, status[call.message.chat.id]["posts"][0], status[call.message.chat.id]["posts"][1], True, True)
+        except Exception:
+            bot.send_message("-332537512", "next_posts_io: " + str(Exception))
+
 
     if re.match("TG_POST_ID=", call.data):
         try:
@@ -346,6 +408,8 @@ def callback_worker(call):
         call.data = call.data.replace("TG_POST_ID=", "")
         data = call.data.split(",")
         bot.send_message(call.message.chat.id, "https://city4people.ru" + urllist[data[1]]["postslist"][int(data[0])]["url"])
+        #bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="https://city4people.ru" + urllist[data[1]]["postslist"][int(data[0])]["url"])
+
 
     for city in cities:
         if len(city) == 2:
@@ -370,6 +434,7 @@ def callback_worker(call):
 
                 status[call.message.chat.id]["city"] = city[0]
                 status[call.message.chat.id]["write_fio"] = True
+                print("write_fio")
 
                 bot.send_message(call.message.chat.id, "👍 Хорошо. Ваш город *" + city[0] + "*. Напишите ваше ФИО", parse_mode="Markdown")
 
@@ -425,9 +490,11 @@ def text(message):
 
     if message.chat.id > 0:
 
-        if message.chat.id in status:
-            pass
-        else:
+        try:
+            status[message.chat.id]
+
+        except:
+
             status[message.chat.id] = {}
 
             status[message.chat.id]["write_fio"] = False
@@ -435,8 +502,26 @@ def text(message):
             status[message.chat.id]["write_place"] = False
             status[message.chat.id]["write_email"] = False
             status[message.chat.id]["write_phone"] = False
+            status[message.chat.id]["find_in_adress"] = False 
 
-        if status[message.chat.id]["write_fio"]:
+        # print(status[message.chat.id]["write_fio"])
+
+        # if message.text == "🚀 Старт":
+        #     start(message)
+
+        # elif message.text == "🖊 Оформление подписи":
+        #     form(message)
+
+        # elif message.text == "📖 Посты":
+        #     posts(message)
+
+        # elif message.text == "🔍 Найти кандидата":
+        #     city(message)
+
+        # print(status[message.chat.id]["write_fio"])
+
+        #if status[message.chat.id]["write_fio"]:
+        if "write_fio" in status[message.chat.id]:
             if re.match(r"[а-яА-Я]{1,}\s[а-яА-Я]{1,}\s[а-яА-Я]{1,}", message.text):
                 status[message.chat.id]["write_birthday"] = True
                 status[message.chat.id]["write_fio"] = False
