@@ -5,7 +5,10 @@ import re
 import os
 import requests
 import json
+import traceback
 from bs4 import BeautifulSoup
+from colorama import Fore, Back, Style, init
+from termcolor import colored
 
 if "TOKEN_HEROKU" in os.environ:
     bot = telebot.TeleBot(os.environ["TOKEN_HEROKU"])
@@ -17,10 +20,7 @@ else:
     with open("./token.txt") as token:
         bot = telebot.TeleBot(token.read())
 
-        from colorama import Fore, Back, Style, init
-        from termcolor import colored
-
-        init()
+init()
 
 cities = [
     ["Владимир", "Воронеж"],
@@ -277,7 +277,7 @@ def start(message):
 
     # elif message.chat.type == "private":
     #     markup = telebot.types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    #     menu = [  
+    #     menu = [
     #         telebot.types.KeyboardButton("🚀 Старт"),
     #         telebot.types.KeyboardButton("🖊 Оформление подписи"),
     #         telebot.types.KeyboardButton("📖 Посты"),
@@ -293,7 +293,7 @@ def hide_menu(message):
     bot.send_message(message.chat.id, "Меню уже скрыто", reply_markup='{"hide_keyboard":true}')
 
 @bot.message_handler(commands=["city"])
-def city(message, place=False):    
+def city(message, place=False):
 
     try:
         if place:
@@ -327,9 +327,9 @@ def city(message, place=False):
         status[message.chat.id]["write_city"] = True
         status[message.chat.id]["write_fio"] = False
 
-@bot.message_handler(commands=["debug"])
-def debug(message):
-    bot.send_message("-1001335444502", json.dumps(status))
+# @bot.message_handler(commands=["debug"])
+# def debug(message):
+#     bot.send_message("-1001335444502", json.dumps(status))
 
 @bot.message_handler(commands=["posts"])
 def posts(message):
@@ -388,8 +388,8 @@ def callback_worker(call):
         status[call.message.chat.id]["write_place"] = False
         status[call.message.chat.id]["write_email"] = False
         status[call.message.chat.id]["write_phone"] = False
-        status[call.message.chat.id]["find_in_adress"] = False 
-        status[call.message.chat.id]["write_city"] = False 
+        status[call.message.chat.id]["find_in_adress"] = False
+        status[call.message.chat.id]["write_city"] = False
 
     if call.data in urllist:
         status[call.message.chat.id]["posts_type"] = call.data
@@ -434,7 +434,7 @@ def callback_worker(call):
             pass
         call.data = call.data.replace("TG_POST_ID=", "")
         data = call.data.split(",")
-        bot.send_message(call.message.chat.id, "https://city4people.ru" + urllist[data[1]]["postslist"][int(data[0])]["url"])
+        bot.send_message(call.message.chat.id, f"https://city4people.ru{urllist[data[1]]["postslist"][int(data[0])]["url"]}")
         #bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="https://city4people.ru" + urllist[data[1]]["postslist"][int(data[0])]["url"])
 
 
@@ -529,8 +529,8 @@ def text(message):
             status[message.chat.id]["write_place"] = False
             status[message.chat.id]["write_email"] = False
             status[message.chat.id]["write_phone"] = False
-            status[message.chat.id]["find_in_adress"] = False 
-            status[message.chat.id]["write_city"] = False 
+            status[message.chat.id]["find_in_adress"] = False
+            status[message.chat.id]["write_city"] = False
 
         status[message.chat.id]["message_text"] = message.text
 
@@ -669,14 +669,15 @@ def text(message):
 
 @bot.message_handler(content_types=["new_chat_members"])
 def new_chat_member(message):
-    if message.new_chat_member.username == "city4people_BETA_tgbot" or message.new_chat_member.username == "city4people_tgbot":
-        bot.reply_to(message, "✋ Привет! Я бот для определения кандидатов в вашем городе \n\n⚙️ Команды:\n/start — выводит это окно\n/form — присылает форму для оформления заявки на подписи\n/posts — присылает посты с сайта ГорПроектов\n/city — определяет кандидата по вашему адресу\n\n👨🏻‍💻 Разработчик: @jDan734")
+    try:
+        if message.new_chat_member.username == "city4people_BETA_tgbot" or message.new_chat_member.username == "city4people_tgbot":
+            bot.reply_to(message, "✋ Привет! Я бот для определения кандидатов в вашем городе \n\n⚙️ Команды:\n/start — выводит это окно\n/form — присылает форму для оформления заявки на подписи\n/posts — присылает посты с сайта ГорПроектов\n/city — определяет кандидата по вашему адресу\n\n👨🏻‍💻 Разработчик: @jDan734")
+    except:
+        pass
 
 
 try:
     bot.send_message("-1001225377568", "Bot started")
     bot.polling()
-except Exception as ex:
-    bot.send_message("-1001225377568", ex)
-    bot.send_message("-1001335444502", json.dumps(status))
-    print(ex)
+except:
+    bot.send_message("-1001225377568", f"`{str(traceback.format_exc())}`", parse_mode="Markdown")
