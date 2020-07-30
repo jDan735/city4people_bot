@@ -434,7 +434,7 @@ def callback_worker(call):
             pass
         call.data = call.data.replace("TG_POST_ID=", "")
         data = call.data.split(",")
-        bot.send_message(call.message.chat.id, f"https://city4people.ru{urllist[data[1]]["postslist"][int(data[0])]["url"]}")
+        bot.send_message(call.message.chat.id, "https://city4people.ru" + urllist[data[1]]["postslist"][int(data[0])]["url"])
         #bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="https://city4people.ru" + urllist[data[1]]["postslist"][int(data[0])]["url"])
 
 
